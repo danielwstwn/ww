@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 40px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: #007BFF;
+            padding: 20px;
+            color: white;
+            flex: 1;
+            text-align: center;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .actions {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: #28A745;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #218838;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-list table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .post-list th, .post-list td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .post-list th {
+            background-color: #f8f9fa;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .close-btn:hover {
+            color: red;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+
+        <div class="stats">
+            <div class="card">
+                <h3>Total Posts</h3>
+                <p id="total-posts">0</p>
+            </div>
+            <div class="card">
+                <h3>Total Comments</h3>
+                <p id="total-comments">23</p>
+            </div>
+            <div class="card">
+                <h3>Total Visitors</h3>
+                <p id="total-visitors">0</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="add-post-btn">Add New Post</button>
+        </div>
+
+        <div class="post-list">
+            <h2>Your Posts</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="post-list-body">
+                    <!-- Posts will be dynamically loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal for adding/editing posts -->
+        <div id="post-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2 id="modal-title">Add New Post</h2>
+                <form id="post-form">
+                    <label for="post-title">Title</label>
+                    <input type="text" id="post-title" name="title" required>
+
+                    <label for="post-content">Content</label>
+                    <textarea id="post-content" name="content" required></textarea>
+
+                    <button type="submit">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let visitorsCount = localStorage.getItem('visitors') || 0;
+            let commentsCount = 0;  
+
+            visitorsCount = parseInt(visitorsCount) + 1;
+            localStorage.setItem('visitors', visitorsCount);
+
+            document.getElementById('total-visitors').innerText = visitorsCount;
+            document.getElementById('total-comments').innerText = commentsCount;
+
+            let posts = [
+                { title: "Post 1", date: "2024-10-01", content: "This is the content of post 1." },
+                { title: "Post 2", date: "2024-10-05", content: "This is the content of post 2." }
+            ];
+
+            document.getElementById('total-posts').innerText = posts.length;
+
+            function loadPosts() {
+                const postListBody = document.getElementById('post-list-body');
+                postListBody.innerHTML = '';
+                posts.forEach((post, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${post.title}</td>
+                        <td>${post.date}</td>
+                        <td>
+                            <button onclick="editPost(${index})">Edit</button>
+                            <button onclick="deletePost(${index})">Delete</button>
+                        </td>
+                    `;
+                    postListBody.appendChild(row);
+                });
+            }
+
+            loadPosts();
+
+            const postModal = document.getElementById('post-modal');
+            const closeModalBtn = document.querySelector('.close-btn');
+            const addPostBtn = document.getElementById('add-post-btn');
+            const postForm = document.getElementById('post-form');
+            let isEdit = false;
+            let currentEditIndex = null;
+
+            addPostBtn.onclick = () => {
+                postModal.style.display = "block";
+                document.getElementById('modal-title').innerText = "Add New Post";
+                postForm.reset();
+                isEdit =                 isEdit = false;
+            };
+
+            closeModalBtn.onclick = () => {
+                postModal.style.display = "none";
+            };
+
+            postForm.onsubmit = function (e) {
+                e.preventDefault();
+                const title = document.getElementById('post-title').value;
+                const content = document.getElementById('post-content').value;
+                const date = new Date().toISOString().slice(0, 10);
+
+                if (isEdit) {
+                    posts[currentEditIndex] = { title, date, content };
+                } else {
+                    posts.push({ title, date, content });
+                }
+
+                postModal.style.display = "none";
+                loadPosts();
+                document.getElementById('total-posts').innerText = posts.length;
+            };
+
+            window.editPost = function (index) {
+                postModal.style.display = "block";
+                document.getElementById('modal-title').innerText = "Edit Post";
+                document.getElementById('post-title').value = posts[index].title;
+                document.getElementById('post-content').value = posts[index].content;
+                isEdit = true;
+                currentEditIndex = index;
+            };
+
+            window.deletePost = function (index) {
+                posts.splice(index, 1);
+                loadPosts();
+                document.getElementById('total-posts').innerText = posts.length;
+            };
+
+            // Close the modal if user clicks outside of the modal content
+            window.onclick = function (event) {
+                if (event.target == postModal) {
+                    postModal.style.display = "none";
+                }
+            };
+        });
+    </script>
+</body>
+</html>
+
